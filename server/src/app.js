@@ -42,6 +42,11 @@ app.use(
   "/api/restaurant/package",
   require("./routes/restaurant/package.routes"),
 );
+// Add this line with the other restaurant routes
+app.use(
+  "/api/restaurant/inventory",
+  require("./routes/restaurant/inventory.routes"),
+);
 
 app.use(errorHandler);
 
