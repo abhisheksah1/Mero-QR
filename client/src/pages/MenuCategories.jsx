@@ -10,6 +10,7 @@ import {
 import { Link } from "react-router-dom";
 import Navigation from "../components/Navigation";
 
+import PageTransition from '../components/PageTransition';
 const categories = [
   {
     id: 1,
@@ -51,6 +52,9 @@ const categories = [
 
 const MenuCategories = () => {
   return (
+    <PageTransition>
+
+   
     <div className="min-h-screen bg-white pb-32">
       {/* Header */}
       <header className="px-6 pt-12 pb-6 flex items-center justify-between sticky top-0 bg-white z-10">
@@ -111,6 +115,7 @@ const MenuCategories = () => {
       {/* Navigation */}
      <Navigation />
     </div>
+     </PageTransition>
   );
 };
 

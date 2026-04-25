@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+#reader button {
+  background-color: #f97316; /* Tailwind orange-500 */
+  color: white;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+#reader__status_span {
+  display: none !important; /* Hides internal status messages */
+}
