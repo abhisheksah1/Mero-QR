@@ -4,7 +4,6 @@ import { forgotPassword, resetPassword } from "../services/api";
 import { Field, Btn, Alert } from "../components/common/UI";
 import { QrCode } from "lucide-react";
 import toast from "react-hot-toast";
-import { useAuth } from "../context/AuthContext"; // ✅ FIXED IMPORT
 
 export function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -16,7 +15,6 @@ export function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
       await forgotPassword({ email });
       setSent(true);
@@ -57,7 +55,6 @@ export function ForgotPassword() {
           </Btn>
         </form>
       )}
-
       {sent && (
         <div style={{ marginTop: "16px" }}>
           <Link
@@ -68,7 +65,6 @@ export function ForgotPassword() {
           </Link>
         </div>
       )}
-
       <p style={{ marginTop: "16px", fontSize: "13px", color: "var(--text3)" }}>
         <Link to="/login" style={{ color: "var(--text2)" }}>
           ← Back to login
@@ -83,7 +79,6 @@ export function ResetPassword() {
   const [form, setForm] = useState({ email: "", otp: "", newPassword: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const handle = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
@@ -91,7 +86,6 @@ export function ResetPassword() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     try {
       await resetPassword(form);
       toast.success("Password reset successfully!");
@@ -110,7 +104,6 @@ export function ResetPassword() {
         style={{ display: "flex", flexDirection: "column", gap: "16px" }}
       >
         {error && <Alert type="error" message={error} />}
-
         <Field
           label="Email"
           name="email"
@@ -135,7 +128,6 @@ export function ResetPassword() {
           onChange={handle}
           required
         />
-
         <Btn type="submit" fullWidth loading={loading}>
           Reset Password
         </Btn>
@@ -144,47 +136,29 @@ export function ResetPassword() {
   );
 }
 
-// ============================
-// CHANGE PASSWORD COMPONENT
-// ============================
-
+// Change Password (employee forced change)
 export function ChangePassword() {
   const navigate = useNavigate();
-  const { role } = useAuth(); // ✅ now properly defined
-
-  const [form, setForm] = useState({
-    newPassword: "",
-    confirm: "",
-  });
-
+  const { role } = useAuth();
+  const [form, setForm] = useState({ newPassword: "", confirm: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const handle = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault();
-
-    if (form.newPassword !== form.confirm) {
+    if (form.newPassword !== form.confirm)
       return setError("Passwords do not match");
-    }
-
     setLoading(true);
     setError("");
-
     try {
       const { changeEmployeePassword } = await import("../services/api");
-
-      await changeEmployeePassword({
-        newPassword: form.newPassword,
-      });
-
+      await changeEmployeePassword({ newPassword: form.newPassword });
       toast.success("Password changed!");
-
       navigate(role === "kitchen" ? "/kitchen" : "/cashier");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to change password");
+      setError(err.response?.data?.message || "Failed");
     } finally {
       setLoading(false);
     }
@@ -199,7 +173,6 @@ export function ChangePassword() {
         type="warning"
         message="This is your first login. Please set a new password."
       />
-
       <form
         onSubmit={submit}
         style={{
@@ -210,7 +183,6 @@ export function ChangePassword() {
         }}
       >
         {error && <Alert type="error" message={error} />}
-
         <Field
           label="New Password"
           name="newPassword"
@@ -219,7 +191,6 @@ export function ChangePassword() {
           onChange={handle}
           required
         />
-
         <Field
           label="Confirm Password"
           name="confirm"
@@ -228,7 +199,6 @@ export function ChangePassword() {
           onChange={handle}
           required
         />
-
         <Btn type="submit" fullWidth loading={loading}>
           Set Password
         </Btn>
@@ -237,9 +207,7 @@ export function ChangePassword() {
   );
 }
 
-// ============================
-// AUTH LAYOUT
-// ============================
+import { useAuth } from "../context/AuthContext";
 
 function AuthLayout({ title, subtitle, children }) {
   return (
@@ -253,7 +221,13 @@ function AuthLayout({ title, subtitle, children }) {
         padding: "20px",
       }}
     >
-      <div style={{ width: "100%", maxWidth: "400px" }}>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "400px",
+          animation: "fadeIn 0.4s ease",
+        }}
+      >
         <div style={{ textAlign: "center", marginBottom: "28px" }}>
           <div
             style={{
@@ -269,17 +243,22 @@ function AuthLayout({ title, subtitle, children }) {
           >
             <QrCode size={24} color="#fff" />
           </div>
-
-          <h1 style={{ fontSize: "22px", marginBottom: "4px" }}>{title}</h1>
-
+          <h1
+            style={{
+              fontSize: "22px",
+              fontFamily: "var(--font-display)",
+              marginBottom: "4px",
+            }}
+          >
+            {title}
+          </h1>
           <p style={{ color: "var(--text3)", fontSize: "13px" }}>{subtitle}</p>
         </div>
-
         <div
           style={{
             background: "var(--card)",
             border: "1.5px solid var(--border)",
-            borderRadius: "12px",
+            borderRadius: "var(--radius-lg)",
             padding: "28px",
           }}
         >

@@ -95,8 +95,8 @@ export default function InventoryPage() {
         )
       }
 
-      <Modal open={modal} onClose={() => setModal(false)} title="Add Inventory Item" >
-        <form onSubmit={save} style={{ display: 'flex',  flexDirection: 'column', gap: '16px' }}>
+      <Modal open={modal} onClose={() => setModal(false)} title="Add Inventory Item">
+        <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <Field label="Item Name" name="itemName" value={form.itemName} onChange={handle} placeholder="e.g. Paneer, Rice, Oil" required />
           <FormGrid>
             <Field label="Unit" name="unit" value={form.unit} onChange={handle} placeholder="pcs / kg / L" />

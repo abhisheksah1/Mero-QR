@@ -1,16 +1,30 @@
 const Table = require('../../models/Table.model');
+const Restaurant = require('../../models/Restaurant.model');
 const { generateQRForTable } = require('../../services/qr.service');
 const { success, error } = require('../../utils/apiResponse');
 
 exports.createTable = async (req, res) => {
   try {
     const { tableNumber } = req.body;
-    const { restaurantId, slug } = req.user;
+    const restaurantId = req.user.restaurantId;
 
-    const { qrCode, qrToken } = await generateQRForTable(slug, tableNumber);
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant) return error(res, 'Restaurant not found', 404);
 
-    const table = await Table.create({ restaurant: restaurantId, tableNumber, qrCode, qrToken });
-    return success(res, table, 'Table created', 201);
+    const { qrCode, qrToken, qrUrl } = await generateQRForTable(
+      restaurantId,
+      restaurant.slug,
+      tableNumber
+    );
+
+    const table = await Table.create({
+      restaurant: restaurantId,
+      tableNumber,
+      qrCode,
+      qrToken
+    });
+
+    return success(res, { ...table.toObject(), qrUrl }, 'Table created', 201);
   } catch (err) {
     return error(res, err.message, 500);
   }
@@ -18,8 +32,16 @@ exports.createTable = async (req, res) => {
 
 exports.getTables = async (req, res) => {
   try {
-    const tables = await Table.find({ restaurant: req.user.restaurantId }).select('-qrToken');
-    return success(res, tables);
+    const restaurantId = req.user.restaurantId;
+    const tables = await Table.find({ restaurant: restaurantId });
+
+    // Rebuild qrUrl for each existing table
+    const tablesWithUrl = tables.map(t => ({
+      ...t.toObject(),
+      qrUrl: `http://localhost:3000/order?table=${t.qrToken}&restaurant=${restaurantId}`
+    }));
+
+    return success(res, tablesWithUrl);
   } catch (err) {
     return error(res, err.message, 500);
   }
@@ -27,15 +49,26 @@ exports.getTables = async (req, res) => {
 
 exports.regenerateQR = async (req, res) => {
   try {
-    const table = await Table.findOne({ _id: req.params.tableId, restaurant: req.user.restaurantId });
+    const restaurantId = req.user.restaurantId;
+    const table = await Table.findOne({
+      _id: req.params.tableId,
+      restaurant: restaurantId
+    });
     if (!table) return error(res, 'Table not found', 404);
 
-    const { qrCode, qrToken } = await generateQRForTable(req.user.slug, table.tableNumber);
+    const restaurant = await Restaurant.findById(restaurantId);
+
+    const { qrCode, qrToken, qrUrl } = await generateQRForTable(
+      restaurantId,
+      restaurant.slug,
+      table.tableNumber
+    );
+
     table.qrCode = qrCode;
     table.qrToken = qrToken;
     await table.save();
 
-    return success(res, { qrCode }, 'QR regenerated');
+    return success(res, { qrCode, qrUrl }, 'QR regenerated');
   } catch (err) {
     return error(res, err.message, 500);
   }

@@ -3,7 +3,8 @@ const app = require('./src/app');
 const connectDB = require('./src/config/db');
 const { init: initSocket } = require('./src/services/socket.service');
 const startCronJobs = require('./src/services/cron.service');
-const { PORT } = require('./src/config/env');
+
+const PORT = process.env.PORT || 5000;
 
 const server = http.createServer(app);
 

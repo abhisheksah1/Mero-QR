@@ -1,219 +1,377 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getOrders, updateOrderStatus } from "../../services/api";
-import { Card, Btn, Spinner } from "../../components/common/UI";
+import { Card, Btn, Badge, Spinner } from "../../components/common/UI";
 import {
   ChefHat,
   Clock,
   CheckCircle,
   RefreshCw,
-  Bell,
-  User,
+  ArrowBigLeft,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import io from "socket.io-client";
 import { useAuth } from "../../context/AuthContext";
-import toast from "react-hot-toast";
+
+const statusColor = (s) =>
+  ({
+    pending: "yellow",
+    preparing: "blue",
+    ready: "green",
+    served: "green",
+    cancelled: "red",
+  })[s] || "default";
 
 export default function KitchenDashboard() {
-  const { user, logout } = useAuth();
-
+  const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("pending");
-  const [unread, setUnread] = useState(0);
+  const socketRef = useRef(null);
+  const audioRef = useRef(null);
 
   useEffect(() => {
     load();
-    const socket = io("http://localhost:5000");
-
-    socket.emit("join:kitchen", user?.restaurantId);
-
-    socket.on("order:new", (order) => {
-      setOrders((prev) => [order, ...prev]);
-      setUnread((prev) => prev + 1);
-      toast.success(`New Order - Table ${order.table?.tableNumber}`);
-    });
-
-    return () => socket.disconnect();
+    setupSocket();
+    return () => socketRef.current?.disconnect();
   }, []);
 
-  const load = async () => {
-    const res = await getOrders();
-    setOrders(res.data.data || []);
-    setLoading(false);
+  const setupSocket = () => {
+    const socket = io("http://localhost:5000");
+    socketRef.current = socket;
+    socket.emit("join:kitchen", user?.restaurantId);
+    socket.on("order:new", (order) => {
+      setOrders((prev) => [order, ...prev]);
+      toast.success(`🔔 New order — Table ${order.table?.tableNumber}!`, {
+        duration: 6000,
+      });
+      // Flash title
+      document.title = "🔔 NEW ORDER! — Kitchen";
+      setTimeout(() => (document.title = "Kitchen Dashboard"), 3000);
+    });
+    socket.on("order:updated", (updated) => {
+      setOrders((prev) =>
+        prev.map((o) => (o._id === updated._id ? updated : o)),
+      );
+    });
   };
 
-  const updateStatus = async (id, status) => {
-    await updateOrderStatus(id, { status });
-    load();
+  const load = async () => {
+    try {
+      const res = await getOrders();
+      const active = (res.data.data || []).filter((o) =>
+        ["pending", "preparing"].includes(o.status),
+      );
+      setOrders(active);
+    } catch {
+      toast.error("Failed to load");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markPreparing = async (id) => {
+    try {
+      await updateOrderStatus(id, { status: "preparing" });
+      load();
+    } catch {
+      toast.error("Failed");
+    }
+  };
+
+  const markReady = async (id) => {
+    try {
+      await updateOrderStatus(id, { status: "ready" });
+      toast.success("Order marked ready! 🎉");
+      load();
+    } catch {
+      toast.error("Failed");
+    }
   };
 
   const pending = orders.filter((o) => o.status === "pending");
-  const cooking = orders.filter((o) => o.status === "preparing");
-  const ready = orders.filter((o) => o.status === "ready");
+  const preparing = orders.filter((o) => o.status === "preparing");
 
   return (
-    <div className="kitchen">
-      {/* TOP BAR */}
-      <div className="topbar">
-        <div className="brand">
-          <ChefHat />
+    <div
+      style={{ minHeight: "100vh", background: "var(--bg)", padding: "24px" }}
+      className="fade-in"
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "28px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div
+            style={{
+              width: "44px",
+              height: "44px",
+              background: "var(--accent)",
+              borderRadius: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ChefHat size={22} color="#fff" />
+          </div>
           <div>
-            <h2>Kitchen Panel</h2>
-            <p>Live Orders System</p>
+            <h1 style={{ fontSize: "22px", fontFamily: "var(--font-display)" }}>
+              Kitchen Dashboard
+            </h1>
+            <p style={{ fontSize: "13px", color: "var(--text3)" }}>
+              Live order queue
+            </p>
           </div>
         </div>
-
-        <div className="actions">
-          <button onClick={load} className="btn">
-            <RefreshCw size={16} />
-          </button>
-
-          <div className="bell">
-            <Bell />
-            {unread > 0 && <span>{unread}</span>}
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "16px" }}>
+            <div style={{ textAlign: "center" }}>
+              <p
+                style={{
+                  fontSize: "24px",
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 800,
+                  color: "var(--yellow)",
+                }}
+              >
+                {pending.length}
+              </p>
+              <p style={{ fontSize: "11px", color: "var(--text3)" }}>PENDING</p>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <p
+                style={{
+                  fontSize: "24px",
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 800,
+                  color: "var(--blue)",
+                }}
+              >
+                {preparing.length}
+              </p>
+              <p style={{ fontSize: "11px", color: "var(--text3)" }}>
+                PREPARING
+              </p>
+            </div>
           </div>
-
-          <div className="profile">
-            <User size={16} />
-            <span>{user?.name}</span>
-            <button onClick={logout}>Logout</button>
-          </div>
+          <Btn
+            variant="ghost"
+            icon={<RefreshCw size={15} />}
+            onClick={load}
+          ></Btn>
+          <Btn
+            variant="ghost"
+            icon={<ArrowRight size={15} />}
+            onClick={() => {
+              localStorage.removeItem("role");
+              localStorage.removeItem("token");
+              localStorage.removeItem("user");
+              window.location.reload();
+            }}
+          ></Btn>
         </div>
       </div>
 
-      {/* BOARD */}
       {loading ? (
         <Spinner />
       ) : (
-        <div className="board">
-          <Column title="Pending" count={pending.length} color="#facc15">
-            {pending.map((o) => (
-              <OrderCard key={o._id} order={o} color="#facc15">
-                <Btn onClick={() => updateStatus(o._id, "preparing")}>
-                  Start Cooking
-                </Btn>
-              </OrderCard>
-            ))}
-          </Column>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "24px",
+          }}
+        >
+          {/* Pending Column */}
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "16px",
+                paddingBottom: "12px",
+                borderBottom: "2px solid var(--yellow)",
+              }}
+            >
+              <Clock size={18} color="var(--yellow)" />
+              <h2
+                style={{
+                  fontSize: "16px",
+                  fontFamily: "var(--font-display)",
+                  color: "var(--yellow)",
+                }}
+              >
+                Pending ({pending.length})
+              </h2>
+            </div>
+            {pending.length === 0 ? (
+              <p
+                style={{
+                  color: "var(--text3)",
+                  textAlign: "center",
+                  padding: "30px",
+                  fontSize: "14px",
+                }}
+              >
+                No pending orders 🎉
+              </p>
+            ) : (
+              pending.map((order) => (
+                <OrderCard key={order._id} order={order}>
+                  <Btn
+                    fullWidth
+                    onClick={() => markPreparing(order._id)}
+                    icon={<ChefHat size={14} />}
+                  >
+                    Start Preparing
+                  </Btn>
+                </OrderCard>
+              ))
+            )}
+          </div>
 
-          <Column title="Cooking" count={cooking.length} color="#3b82f6">
-            {cooking.map((o) => (
-              <OrderCard key={o._id} order={o} color="#3b82f6">
-                <Btn
-                  onClick={() => updateStatus(o._id, "ready")}
-                  variant="success"
-                >
-                  Mark Ready
-                </Btn>
-              </OrderCard>
-            ))}
-          </Column>
-
-          <Column title="Ready" count={ready.length} color="#22c55e">
-            {ready.map((o) => (
-              <OrderCard key={o._id} order={o} color="#22c55e" />
-            ))}
-          </Column>
+          {/* Preparing Column */}
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "16px",
+                paddingBottom: "12px",
+                borderBottom: "2px solid var(--blue)",
+              }}
+            >
+              <ChefHat size={18} color="var(--blue)" />
+              <h2
+                style={{
+                  fontSize: "16px",
+                  fontFamily: "var(--font-display)",
+                  color: "var(--blue)",
+                }}
+              >
+                Preparing ({preparing.length})
+              </h2>
+            </div>
+            {preparing.length === 0 ? (
+              <p
+                style={{
+                  color: "var(--text3)",
+                  textAlign: "center",
+                  padding: "30px",
+                  fontSize: "14px",
+                }}
+              >
+                Nothing cooking yet
+              </p>
+            ) : (
+              preparing.map((order) => (
+                <OrderCard key={order._id} order={order}>
+                  <Btn
+                    fullWidth
+                    variant="success"
+                    onClick={() => markReady(order._id)}
+                    icon={<CheckCircle size={14} />}
+                  >
+                    Mark Ready
+                  </Btn>
+                </OrderCard>
+              ))
+            )}
+          </div>
         </div>
       )}
-
-      {/* CSS */}
-      <style>{`
-        .kitchen {
-          height: 100vh;
-          background: #0f172a;
-          color: white;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .topbar {
-          display: flex;
-          justify-content: space-between;
-          padding: 16px 20px;
-          background: #111827;
-          border-bottom: 1px solid #1f2937;
-        }
-
-        .brand {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-        }
-
-        .actions {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-        }
-
-        .board {
-          flex: 1;
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
-          padding: 16px;
-          overflow: auto;
-        }
-
-        .column {
-          background: #111827;
-          border-radius: 12px;
-          padding: 12px;
-          border-top: 4px solid var(--color);
-        }
-
-        .card {
-          background: #1f2937;
-          padding: 12px;
-          border-radius: 10px;
-          margin-bottom: 10px;
-        }
-
-        .bell span {
-          background: red;
-          font-size: 10px;
-          padding: 2px 6px;
-          border-radius: 10px;
-          position: absolute;
-        }
-      `}</style>
     </div>
   );
 }
 
-/* COLUMN */
-function Column({ title, count, color, children }) {
-  return (
-    <div className="column" style={{ "--color": color }}>
-      <h3>
-        {title} ({count})
-      </h3>
-      {children}
-    </div>
-  );
-}
-
-/* ORDER CARD */
-function OrderCard({ order, color, children }) {
-  const mins = Math.floor((Date.now() - new Date(order.createdAt)) / 60000);
+function OrderCard({ order, children }) {
+  const elapsed = Math.floor((Date.now() - new Date(order.createdAt)) / 60000);
+  const urgent = elapsed > 15;
 
   return (
-    <div className="card" style={{ borderLeft: `4px solid ${color}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <b>Table {order.table?.tableNumber}</b>
-        <small>{mins}m ago</small>
+    <Card
+      style={{
+        marginBottom: "12px",
+        borderColor: urgent ? "var(--red)30" : "var(--border)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "10px",
+        }}
+      >
+        <h3 style={{ fontSize: "18px", fontFamily: "var(--font-display)" }}>
+          Table {order.table?.tableNumber || "?"}
+        </h3>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <span
+            style={{
+              fontSize: "12px",
+              color: urgent ? "var(--red)" : "var(--text3)",
+              fontWeight: urgent ? 700 : 400,
+            }}
+          >
+            {elapsed}m ago
+          </span>
+        </div>
       </div>
 
-      <div style={{ marginTop: 8 }}>
-        {order.items?.map((i, idx) => (
-          <div key={idx}>
-            {i.quantity} × {i.name}
+      <div style={{ marginBottom: "12px" }}>
+        {order.items?.map((item, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "6px 0",
+              borderBottom: "1px solid var(--border)",
+              fontSize: "14px",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 700,
+                fontSize: "18px",
+                color: "var(--accent)",
+                minWidth: "28px",
+              }}
+            >
+              {item.quantity}×
+            </span>
+            <span style={{ fontWeight: 500 }}>{item.name}</span>
           </div>
         ))}
       </div>
 
-      {children && <div style={{ marginTop: 10 }}>{children}</div>}
-    </div>
+      {order.note && (
+        <div
+          style={{
+            padding: "8px 10px",
+            background: "var(--yellow-dim)",
+            borderRadius: "6px",
+            fontSize: "13px",
+            color: "var(--yellow)",
+            marginBottom: "10px",
+          }}
+        >
+          📝 {order.note}
+        </div>
+      )}
+
+      {children}
+    </Card>
   );
 }

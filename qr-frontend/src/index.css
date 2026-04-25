@@ -84,5 +84,3 @@ select option { background: var(--bg3); }
 
 .fade-in { animation: fadeIn 0.3s ease forwards; }
 .slide-in { animation: slideIn 0.3s ease forwards; }
-
-
