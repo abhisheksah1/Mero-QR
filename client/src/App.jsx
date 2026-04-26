@@ -12,6 +12,8 @@ import TableInfo from "./pages/TableInfo";
 import MenuItems from "./pages/MenuItems";
 import AboutRestaurant from "./pages/Home/AboutRestaurant";
 import OrderHistory from "./pages/Home/OrderHistory";
+import Settings from "./pages/Home/Settings";
+import PrivacyPolicy from "./pages/Home/PrivacyPolicy";
 
 function App() {
   const location = useLocation();
@@ -30,6 +32,8 @@ function App() {
         <Route path="/menuItems" element={<MenuItems />} />
         <Route path="/about" element={<AboutRestaurant />} />
         <Route path="/orderHistory" element={<OrderHistory />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
       </Routes>
     </AnimatePresence>
   );

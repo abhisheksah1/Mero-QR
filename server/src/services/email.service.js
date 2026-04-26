@@ -1,10 +1,37 @@
+/**
+ * Email Service Module
+ * Handles all transactional email sending for the application
+ * 
+ * @module services/email
+ * @description
+ * Provides email functionality using nodemailer:
+ * - Welcome emails for new users
+ * - OTP verification emails
+ * - Order notification emails
+ * - Password reset emails
+ * 
+ * Uses HTML templates with professional UI design
+ */
+
 const transporter = require('../config/mailer');
 const { MAIL_FROM } = require('../config/env');
 
+// Frontend URL for email links (with fallback for development)
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
 
 
-// ✅ Sanitize user input (prevent HTML injection)
+/**
+ * HTML Entity Escape Function
+ * Prevents XSS attacks by escaping special HTML characters
+ * 
+ * @function escapeHTML
+ * @param {string} str - Input string to sanitize
+ * @returns {string} Sanitized string safe for HTML embedding
+ * 
+ * @description
+ * Escapes: & < > " '
+ * Used to prevent HTML injection in user-provided content
+ */
 const escapeHTML = (str = "") =>
   str.replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -15,7 +42,22 @@ const escapeHTML = (str = "") =>
   }[char]));
 
 
-// ✅ Base Email Template (Professional UI)
+/**
+ * Base Email Template
+ * Creates consistent HTML wrapper for all emails
+ * 
+ * @function baseTemplate
+ * @param {string} title - Email title/heading
+ * @param {string} content - HTML content for email body
+ * @returns {string} Complete HTML email template
+ * 
+ * @description
+ * Provides consistent branding across all emails:
+ * - Gradient header with logo
+ * - Professional typography
+ * - Responsive design
+ * - Footer with copyright
+ */
 const baseTemplate = (title, content) => {
   return `
   <div style="font-family: Arial, sans-serif; background:#f4f6f8; padding:20px;">
@@ -52,7 +94,24 @@ const baseTemplate = (title, content) => {
 };
 
 
-// ✅ Send Mail with error handling
+/**
+ * Core Mail Sending Function
+ * Handles actual email transmission with error handling
+ * 
+ * @function sendMail
+ * @async
+ * @param {Object} params - Email parameters
+ * @param {string} params.to - Recipient email address
+ * @param {string} params.subject - Email subject line
+ * @param {string} params.html - HTML email body
+ * @returns {Promise<Object>} Nodemailer send info
+ * @throws {Error} Throws error if sending fails
+ * 
+ * @description
+ * - Uses configured transporter from mailer.js
+ * - Sets sender from MAIL_FROM environment variable
+ * - Wraps in try-catch for graceful error handling
+ */
 const sendMail = async ({ to, subject, html }) => {
   try {
     const info = await transporter.sendMail({
@@ -69,7 +128,15 @@ const sendMail = async ({ to, subject, html }) => {
 };
 
 
-// 🎉 Welcome Email
+/**
+ * Welcome Email Sender
+ * Sends welcome email to new restaurant owners
+ * 
+ * @function sendWelcomeEmail
+ * @param {string} to - Recipient email address
+ * @param {string} name - Recipient name for personalization
+ * @returns {Promise<Object>} Email send result
+ */
 const sendWelcomeEmail = (to, name) =>
   sendMail({
     to,

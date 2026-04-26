@@ -57,9 +57,10 @@ export default function AboutRestaurant() {
           backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80')`,
         }}
       >
-        <Link to='/' className="absolute top-4 z-10 left-4 bg-white/20 p-2 rounded-lg hover:bg-white/30 transition-colors">
-          
-
+        <Link
+          to="/"
+          className="absolute text-white top-4 z-10 left-4 bg-white/20 p-2 rounded-lg hover:bg-white/30 transition-colors"
+        >
           <X size={20} />
         </Link>
         <div className="absolute inset-0 flex items-center justify-center">

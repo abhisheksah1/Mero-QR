@@ -46,7 +46,9 @@ const Sidebar = ({ isOpen, onClose }) => {
             </div>
 
             <div className="space-y-4">
-              <SidebarItem icon={<History />} label="Order History" />
+              <Link to="/orderHistory">
+                <SidebarItem icon={<History />} label="Order History" />
+              </Link>
               <Link to="/about">
                 <SidebarItem icon={<Info />} label="About Restaurant" />
               </Link>
@@ -55,8 +57,12 @@ const Sidebar = ({ isOpen, onClose }) => {
                 label="Language"
                 trailing="English"
               />
-              <SidebarItem icon={<Settings />} label="Settings" />
-              <SidebarItem icon={<ShieldCheck />} label="Privacy Policy" />
+              <Link to="/settings">
+                <SidebarItem icon={<Settings />} label="Settings" />
+              </Link>
+              <Link to="/privacy">
+                <SidebarItem icon={<ShieldCheck />} label="Privacy Policy" />
+              </Link>
             </div>
 
             <div className="absolute bottom-10 left-6">
@@ -72,7 +78,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 };
 
 const SidebarItem = ({ icon, label, trailing }) => (
-  <div className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group">
+  <div className="flex items-center mb-0 justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group">
     <div className="flex items-center gap-4">
       <div className="text-gray-400 group-hover:text-orange-500 transition-colors">
         {icon}
