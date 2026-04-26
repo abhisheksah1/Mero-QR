@@ -2,15 +2,12 @@ import React, { useState } from "react";
 import {
   Search,
   ChevronRight,
-  Home,
-  Menu as MenuIcon,
   ShoppingBag,
-  User,
+  Menu as MenuIcon,
   X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navigation from "../components/Navigation";
-
 import PageTransition from "../components/PageTransition";
 import Sidebar from "../components/homepage/SideBar";
 
@@ -55,77 +52,126 @@ const categories = [
 
 const MenuCategories = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch]       = useState(false);
+  const [searchQuery, setSearchQuery]     = useState("");
 
-  // Filter categories based on search
-  const filteredCategories = categories.filter(cat =>
+  const filteredCategories = categories.filter((cat) =>
     cat.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-  };
-
-  const clearSearch = () => {
+  const handleSearchToggle = () => {
+    setShowSearch((prev) => !prev);
     setSearchQuery("");
-    setIsSearchOpen(false);
   };
 
   return (
     <PageTransition>
       <div className="min-h-screen bg-white pb-32">
+
         {/* Header */}
         <header className="px-4 pt-12 pb-4 flex items-center justify-between sticky top-0 bg-white z-10">
+
+          {/* Left — sidebar toggle (hidden when search is open) */}
+          {!showSearch ? (
+            <button
+              className="p-2 bg-gray-100 rounded-xl"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <MenuIcon size={20} className="text-gray-700" />
+            </button>
+          ) : (
+            // Placeholder keeps the layout from jumping
+            <div className="w-9" />
+          )}
+
+          {/* Centre — title or inline search input */}
+          {showSearch ? (
+            <div className="flex-1 mx-3 bg-gray-100 rounded-xl flex items-center px-3 gap-2">
+              <Search size={15} className="text-gray-400 flex-shrink-0" />
+              <input
+                autoFocus
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search categories..."
+                className="flex-1 bg-transparent text-sm outline-none py-2 text-gray-700 placeholder:text-gray-400"
+              />
+              {/* Clear text only — keeps search bar open */}
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")}>
+                  <X size={14} className="text-gray-400" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="text-center">
+              <h1 className="text-lg font-bold text-gray-800">Our Menu</h1>
+              <p className="text-[10px] text-gray-400">
+                What would you like to order?
+              </p>
+            </div>
+          )}
+
+          {/* Right — toggle search open/close */}
           <button
             className="p-2 bg-gray-100 rounded-xl"
-            onClick={() => setIsSidebarOpen(true)}
+            onClick={handleSearchToggle}
           >
-            <MenuIcon size={20} className="text-gray-700" />
-          </button>
-          <div className="text-center">
-            <h1 className="text-lg font-bold text-gray-800">Our Menu</h1>
-            <p className="text-[10px] text-gray-400">
-              What would you like to order?
-            </p>
-          </div>
-          <button 
-            className="p-2 bg-gray-100 rounded-xl"
-            onClick={() => setIsSearchOpen(true)}
-          >
-            <Search size={20} className="text-gray-700" />
+            {showSearch
+              ? <X size={20} className="text-gray-700" />
+              : <Search size={20} className="text-gray-700" />
+            }
           </button>
         </header>
 
-        {/* Category List */}
-        <div className="px-4 space-y-3 pb-32">
-          {(searchQuery ? filteredCategories : categories).map((cat) => (
-            <Link
-              to="/menuItems"
-              key={cat.id}
-              className="group flex items-center p-3 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all cursor-pointer hover:border-orange-200"
-            >
-              <div className="w-14 h-14 rounded-xl overflow-hidden mr-3 shrink-0">
-                <img
-                  src={cat.img}
-                  alt={cat.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+        {/* Category list */}
+        <div className="px-4 space-y-3 pb-16">
+          {filteredCategories.length === 0 ? (
 
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-gray-800">{cat.name}</h3>
-                <p className="text-xs text-gray-400">{cat.count} Items</p>
+            // Empty state when search returns nothing
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                <Search size={24} className="text-gray-300" />
               </div>
+              <p className="text-sm font-semibold text-gray-600">No categories found</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Try searching with a different keyword
+              </p>
+              <button
+                onClick={() => setSearchQuery("")}
+                className="mt-4 text-xs text-orange-500 font-semibold border border-orange-300 px-4 py-1.5 rounded-full"
+              >
+                Clear search
+              </button>
+            </div>
 
-              <div className="p-2 bg-gray-50 rounded-full group-hover:bg-orange-50 group-hover:text-orange-500 transition-colors">
-                <ChevronRight size={18} />
-              </div>
-            </Link>
-          ))}
+          ) : (
+            filteredCategories.map((cat) => (
+              <Link
+                to="/menuItems"
+                key={cat.id}
+                className="group flex items-center p-3 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all cursor-pointer hover:border-orange-200"
+              >
+                <div className="w-14 h-14 rounded-xl overflow-hidden mr-3 shrink-0">
+                  <img
+                    src={cat.img}
+                    alt={cat.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-gray-800">{cat.name}</h3>
+                  <p className="text-xs text-gray-400">{cat.count} Items</p>
+                </div>
+                <div className="p-2 bg-gray-50 rounded-full group-hover:bg-orange-50 group-hover:text-orange-500 transition-colors">
+                  <ChevronRight size={18} />
+                </div>
+              </Link>
+            ))
+          )}
         </div>
 
-        {/* Floating View Cart Button */}
+        {/* Floating View Cart button */}
         <div className="fixed bottom-24 left-0 right-0 px-6">
           <Link
             to="/cart"
@@ -141,89 +187,8 @@ const MenuCategories = () => {
           </Link>
         </div>
 
-        {/* Navigation */}
         <Navigation />
-        <Sidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-        />
-
-        {/* Search Modal */}
-        {isSearchOpen && (
-          <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
-            {/* Search Header */}
-            <div className="px-4 pt-12 pb-4 sticky top-0 bg-white z-10">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={clearSearch}
-                  className="p-2 bg-gray-100 rounded-xl"
-                >
-                  <X size={20} className="text-gray-700" />
-                </button>
-                <div className="flex-1 relative">
-                  <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search categories..."
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    autoFocus
-                    className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Search Results */}
-            <div className="px-4 space-y-3 pb-8">
-              {searchQuery && filteredCategories.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No categories found for "{searchQuery}"</p>
-                </div>
-              ) : (
-                filteredCategories.map((cat) => (
-                  <Link
-                    to="/menuItems"
-                    key={cat.id}
-                    onClick={clearSearch}
-                    className="flex items-center p-3 bg-gray-50 rounded-2xl"
-                  >
-                    <div className="w-12 h-12 rounded-xl overflow-hidden mr-3 shrink-0">
-                      <img
-                        src={cat.img}
-                        alt={cat.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-800">{cat.name}</h3>
-                      <p className="text-xs text-gray-400">{cat.count} Items</p>
-                    </div>
-                    <ChevronRight size={18} className="text-gray-400 shrink-0" />
-                  </Link>
-                ))
-              )}
-            </div>
-
-            {/* Quick Suggestions */}
-            {!searchQuery && (
-              <div className="px-4 mt-6 pb-8">
-                <p className="text-xs font-bold text-gray-400 uppercase mb-3">Popular Searches</p>
-                <div className="flex flex-wrap gap-2">
-                  {['Pizza', 'Burgers', 'Drinks', 'Desserts', 'Starters'].map((term) => (
-                    <button
-                      key={term}
-                      onClick={() => handleSearch(term)}
-                      className="px-4 py-2 bg-gray-100 rounded-full text-xs font-bold text-gray-600"
-                    >
-                      {term}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       </div>
     </PageTransition>
   );
