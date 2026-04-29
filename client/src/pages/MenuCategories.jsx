@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   ChevronRight,
@@ -10,6 +11,9 @@ import { Link } from "react-router-dom";
 import Navigation from "../components/Navigation";
 import PageTransition from "../components/PageTransition";
 import Sidebar from "../components/homepage/SideBar";
+import ViewCart from "../components/ViewCartBtn";
+import ViewCartBtn from "../components/ViewCartBtn";
+import Loader from "../components/loader/Loader";
 
 const categories = [
   {
@@ -40,7 +44,7 @@ const categories = [
     id: 5,
     name: "Drinks",
     count: 15,
-    img: "https://images.unsplash.com/photo-1544145945-f904253d0c7b?auto=format&fit=crop&q=80&w=200",
+    img: "https://catering.soulorigin.com.au/cdn/shop/files/SoulOriginCateringSoftDrinks.jpg?v=1732734253",
   },
   {
     id: 6,
@@ -51,12 +55,23 @@ const categories = [
 ];
 
 const MenuCategories = () => {
+  const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showSearch, setShowSearch]       = useState(false);
-  const [searchQuery, setSearchQuery]     = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filteredCategories = categories.filter((cat) =>
-    cat.name.toLowerCase().includes(searchQuery.toLowerCase())
+    cat.name
+      .toLowerCase()
+      .split(" ") // ["main", "course"]
+      .some((word) => word.startsWith(searchQuery.toLowerCase())),
   );
 
   const handleSearchToggle = () => {
@@ -64,14 +79,16 @@ const MenuCategories = () => {
     setSearchQuery("");
   };
 
+  // if (isLoading) {
+  //   return <Loader />;
+  // }
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-white pb-32">
-
         {/* Header */}
-        <header className="px-4 pt-12 pb-4 flex items-center justify-between sticky top-0 bg-white z-10">
-
-          {/* Left — sidebar toggle (hidden when search is open) */}
+        <header className="px-4 pt-12 pb-4 h-22.5 flex items-center justify-between sticky top-0 bg-white z-10">
+          {/* LEFT */}
           {!showSearch ? (
             <button
               className="p-2 bg-gray-100 rounded-xl"
@@ -80,60 +97,90 @@ const MenuCategories = () => {
               <MenuIcon size={20} className="text-gray-700" />
             </button>
           ) : (
-            // Placeholder keeps the layout from jumping
-            <div className="w-9" />
+            <div className="w-2" />
           )}
 
-          {/* Centre — title or inline search input */}
-          {showSearch ? (
-            <div className="flex-1 mx-3 bg-gray-100 rounded-xl flex items-center px-3 gap-2">
-              <Search size={15} className="text-gray-400 flex-shrink-0" />
-              <input
-                autoFocus
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search categories..."
-                className="flex-1 bg-transparent text-sm outline-none py-2 text-gray-700 placeholder:text-gray-400"
-              />
-              {/* Clear text only — keeps search bar open */}
-              {searchQuery && (
-                <button onClick={() => setSearchQuery("")}>
-                  <X size={14} className="text-gray-400" />
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="text-center">
-              <h1 className="text-lg font-bold text-gray-800">Our Menu</h1>
-              <p className="text-[10px] text-gray-400">
-                What would you like to order?
-              </p>
-            </div>
-          )}
+          {/* CENTER */}
+          <AnimatePresence mode="wait">
+            {showSearch ? (
+              <motion.div
+                key="search"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: "100%", opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="flex-1 mx-3 bg-gray-100 rounded-xl flex items-center px-3 gap-2 overflow-hidden"
+              >
+                <Search size={15} className="text-gray-400 shrink-0" />
 
-          {/* Right — toggle search open/close */}
+                <input
+                  autoFocus
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search categories..."
+                  className="flex-1 bg-transparent text-sm outline-none py-2 text-gray-700 placeholder:text-gray-400 min-w-28"
+                />
+
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery("")}>
+                    <X size={14} className="text-gray-400" />
+                  </button>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="title"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 text-center leading-tight"
+              >
+                <h1 className="text-lg font-bold text-gray-800 leading-none">
+                  Our Menu
+                </h1>
+                <p className="text-[10px] text-gray-400 leading-none">
+                  What would you like to order?
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* RIGHT */}
           <button
             className="p-2 bg-gray-100 rounded-xl"
             onClick={handleSearchToggle}
           >
-            {showSearch
-              ? <X size={20} className="text-gray-700" />
-              : <Search size={20} className="text-gray-700" />
-            }
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={showSearch ? "close" : "search"}
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {showSearch ? (
+                  <X size={20} className="text-gray-700" />
+                ) : (
+                  <Search size={20} className="text-gray-700" />
+                )}
+              </motion.div>
+            </AnimatePresence>
           </button>
         </header>
 
         {/* Category list */}
-        <div className="px-4 space-y-3 pb-16">
+        <div className="px-4 pt-2.5 space-y-3 pb-16">
           {filteredCategories.length === 0 ? (
-
             // Empty state when search returns nothing
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
                 <Search size={24} className="text-gray-300" />
               </div>
-              <p className="text-sm font-semibold text-gray-600">No categories found</p>
+              <p className="text-sm font-semibold text-gray-600">
+                No categories found
+              </p>
               <p className="text-xs text-gray-400 mt-1">
                 Try searching with a different keyword
               </p>
@@ -144,7 +191,6 @@ const MenuCategories = () => {
                 Clear search
               </button>
             </div>
-
           ) : (
             filteredCategories.map((cat) => (
               <Link
@@ -172,23 +218,13 @@ const MenuCategories = () => {
         </div>
 
         {/* Floating View Cart button */}
-        <div className="fixed bottom-24 left-0 right-0 px-6">
-          <Link
-            to="/cart"
-            className="w-full bg-orange-500 py-4 rounded-2xl flex items-center justify-between px-6 shadow-xl shadow-orange-200 active:scale-95 transition-transform"
-          >
-            <div className="flex items-center gap-3">
-              <ShoppingBag size={20} className="text-white" />
-              <span className="text-white font-bold">View Cart</span>
-            </div>
-            <span className="bg-white text-orange-500 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
-              3
-            </span>
-          </Link>
-        </div>
+        <ViewCartBtn />
 
         <Navigation />
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
       </div>
     </PageTransition>
   );

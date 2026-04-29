@@ -1,7 +1,6 @@
 // Vite + React + TailwindCSS - FULL RESPONSIVE HOMEPAGE (LIKE DESIGN)
 
-import React, { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
 
 import {
   Phone,
@@ -21,8 +20,10 @@ import QRScannerModal from "../../components/homepage/QRScannerModal";
 import Offers from "../../components/homepage/Offers";
 import Feedback from "../../components/homepage/Feedback";
 import PageTransition from '../../components/PageTransition';
+import Loader from '../../components/loader/Loader';
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showWaiters, setShowWaiters] = useState(false);
@@ -30,12 +31,24 @@ export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
+  useEffect(() => {
+    // Simulate page loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const handleScanSuccess = (data) => {
     console.log("QR Data Scanned:", data);
     // Usually, 'data' is a URL. You can parse it to find the table number.
     // Example: if data is 'https://mycafe.com/table/08', redirect there.
     alert(`Scanned: ${data}`);
   };
+
+  // if (isLoading) {
+  //   return <Loader />;
+  // }
 
   return (
     <PageTransition>
@@ -88,7 +101,7 @@ export default function Home() {
           <span className="rotate-180">🔄</span> Scan another QR code
         </button>
         <Link
-          to="menu"
+          to="/menu"
           className="w-48 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-2xl mt-8 shadow-lg shadow-orange-200 transition-all active:scale-95"
         >
           View Menu
